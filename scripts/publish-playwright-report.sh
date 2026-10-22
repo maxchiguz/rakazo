@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID is required}"
-: "${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY is required}"
-: "${S3_BUCKET:?S3_BUCKET is required}"
-: "${S3_ENDPOINT:?S3_ENDPOINT is required}"
-: "${PLAYWRIGHT_PUBLIC_BASE_URL:?PLAYWRIGHT_PUBLIC_BASE_URL is required}"
+# Publish config is OPTIONAL: if any of the S3/AWS settings are absent, the
+# screenshots still run and pass — only the upload is skipped. Failing the whole
+# job on a missing optional secret turned nightly verification red every night
+# while the verification itself was green.
+if [[ -z "${AWS_ACCESS_KEY_ID:-}" || -z "${AWS_SECRET_ACCESS_KEY:-}"    || -z "${S3_BUCKET:-}" || -z "${S3_ENDPOINT:-}"    || -z "${PLAYWRIGHT_PUBLIC_BASE_URL:-}" ]]; then
+  echo "::notice::Playwright gallery publish skipped — S3 publish config not set (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / S3_BUCKET / S3_ENDPOINT / PLAYWRIGHT_PUBLIC_BASE_URL). Tests and screenshots are unaffected."
+  exit 0
+fi
 : "${PLAYWRIGHT_RESULT:?PLAYWRIGHT_RESULT is required}"
 : "${PLAYWRIGHT_RUN_ATTEMPT:?PLAYWRIGHT_RUN_ATTEMPT is required}"
 : "${PLAYWRIGHT_RUN_ID:?PLAYWRIGHT_RUN_ID is required}"
